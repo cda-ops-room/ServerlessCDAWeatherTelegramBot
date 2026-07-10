@@ -7,7 +7,7 @@ const SINGAPORE_TIME_ZONE = 'Asia/Singapore';
 
 function formatSingaporeDate(date: Date | string) {
 	const parsedDate = new Date(date);
-	const formatted = format(parsedDate, 'd MMM yyyy h:mm aa', {
+	const formatted = format(parsedDate, 'd MMM yyyy HH:mm', {
 		in: tz(SINGAPORE_TIME_ZONE),
 	});
 
@@ -16,14 +16,15 @@ function formatSingaporeDate(date: Date | string) {
 
 function formatAsTime(date: Date | string) {
 	const parsedDate = new Date(date);
-	const formatted = format(parsedDate, 'h:mm aa', {
+	const formatted = format(parsedDate, 'HH:mm', {
 		in: tz(SINGAPORE_TIME_ZONE),
 	});
 
 	return formatted;
 }
 export function escapeHtml(text: string) {
-	return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	return text;
+	// return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 export function buildWeatherReply(
