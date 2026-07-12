@@ -1,7 +1,8 @@
 import { rule } from './bot/rule';
 import getRotaNumberForDate from './getRotaNumberForDate';
+import {Rota} from "./db/rota";
 
-export function getNextUpdateDateForRota(rota: '1' | '2' | '3' | 'OFFICE_HOURS', fromDate: Date = new Date()): Date | null {
+export function getNextUpdateDateForRota(rota: Rota, fromDate: Date = new Date()): Date | null {
 	let cursor = fromDate;
 
 	for (let attempt = 0; attempt < 200; attempt++) {
@@ -13,7 +14,7 @@ export function getNextUpdateDateForRota(rota: '1' | '2' | '3' | 'OFFICE_HOURS',
 
 		const nextDate = nextInvocation;
 
-		if (rota === 'OFFICE_HOURS' || getRotaNumberForDate(nextDate) === Number(rota)) {
+		if (rota === 0 || getRotaNumberForDate(nextDate) === rota) {
 			return nextDate;
 		}
 

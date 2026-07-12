@@ -5,7 +5,7 @@ export const rotaTable = sqliteTable('rota', {
 
 	telegramChatId: int('telegram_chat_id').notNull().unique(),
 
-	rota: text({
-		enum: ['1', '2', '3', 'OFFICE_HOURS'],
-	}).notNull(),
+	// 0 -> OH
+	// 1-3 -> Rota 1-3
+	rota: int().notNull(),
 });

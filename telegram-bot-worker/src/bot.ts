@@ -1,4 +1,3 @@
-import { Markup, Telegraf } from 'telegraf';
 import {
 	buildAlreadySubscribedMessage,
 	buildRotaSetSuccessMessage,
@@ -37,11 +36,11 @@ export function registerBotActionHandlers(bot: Bot<Context, Api<RawApi>>, db: Db
 
 		await upsertRota({
 			chatId: ctx.chat.id,
-			rota: '1',
+			rota: 1,
 			db,
 		});
 
-		const nextUpdate = getNextUpdateDateForRota('1') || rule.nextInvocationDate(new Date());
+		const nextUpdate = getNextUpdateDateForRota(1) || rule.nextInvocationDate(new Date());
 		await ctx.editMessageText(buildRotaSetSuccessMessage(1, nextUpdate), {
 			parse_mode: 'HTML',
 		});
@@ -56,11 +55,11 @@ export function registerBotActionHandlers(bot: Bot<Context, Api<RawApi>>, db: Db
 
 		await upsertRota({
 			chatId: ctx.chat.id,
-			rota: '2',
+			rota: 2,
 			db,
 		});
 
-		const nextUpdate = getNextUpdateDateForRota('2') || rule.nextInvocationDate(new Date());
+		const nextUpdate = getNextUpdateDateForRota(2) || rule.nextInvocationDate(new Date());
 		await ctx.editMessageText(buildRotaSetSuccessMessage(2, nextUpdate), {
 			parse_mode: 'HTML',
 		});
@@ -75,11 +74,11 @@ export function registerBotActionHandlers(bot: Bot<Context, Api<RawApi>>, db: Db
 
 		await upsertRota({
 			chatId: ctx.chat.id,
-			rota: '3',
+			rota: 3,
 			db,
 		});
 
-		const nextUpdate = getNextUpdateDateForRota('3') || rule.nextInvocationDate(new Date());
+		const nextUpdate = getNextUpdateDateForRota(3) || rule.nextInvocationDate(new Date());
 		await ctx.editMessageText(buildRotaSetSuccessMessage(3, nextUpdate), {
 			parse_mode: 'HTML',
 		});
@@ -94,12 +93,12 @@ export function registerBotActionHandlers(bot: Bot<Context, Api<RawApi>>, db: Db
 
 		await upsertRota({
 			chatId: ctx.chat.id,
-			rota: 'OFFICE_HOURS',
+			rota: 0,
 			db,
 		});
 
 		const nextUpdate = rule.nextInvocationDate(new Date());
-		await ctx.editMessageText(buildRotaSetSuccessMessage('office_hours', nextUpdate), {
+		await ctx.editMessageText(buildRotaSetSuccessMessage(0, nextUpdate), {
 			parse_mode: 'HTML',
 		});
 		await ctx.answerCallbackQuery({ text: 'Setting office hour...' }); // Acknowledge the callback query to remove the loading state
@@ -144,7 +143,7 @@ export function registerHandlers(bot: Bot<Context, Api<RawApi>>, db: Db) {
 			db,
 		});
 
-		const rotaNumber: '1' | '2' | '3' | 'OFFICE_HOURS' | null = subscriptionRota;
+		const rotaNumber= subscriptionRota;
 		const hasSubscribedToAnyChat = rotaNumber !== null;
 
 		if (hasSubscribedToAnyChat) {
@@ -300,7 +299,7 @@ Info last updated: ${formatDate(new Date(cda.update_on)) ?? 'N/A'}
 
 // TODO: Add handlers to add other admins via username
 // TODO: Fix migration to workers
-function registerAdminHandlers(bot: Telegraf, db: Db) {
+// function registerAdminHandlers(bot: Telegraf, db: Db) {
 	// Usage: /announcement [message]
 	// Example: /announcement Weather update will be delayed today due to API issues.
 	// bot.command('announcement', async (ctx) => {
@@ -330,7 +329,7 @@ function registerAdminHandlers(bot: Telegraf, db: Db) {
 	//
 	// 	logger.info(`Admin announcement sent by user: ${ctx.from.username} (ID: ${ctx.from.id}). Message: ${announcementMsg}`);
 	// });
-}
+// }
 
 // Composition root for this module: builds bot + scheduler, wires handlers, and returns runtime.
 // Caller controls when runtime starts by deciding when to invoke this function.

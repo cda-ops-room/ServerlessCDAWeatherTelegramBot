@@ -2,6 +2,7 @@ import { tz } from '@date-fns/tz';
 import { format } from 'date-fns/format';
 import { Weather } from '../../../weather-wbgt-service/src/weather.api';
 import { Template } from './template';
+import {Rota} from "../db/rota";
 
 const SINGAPORE_TIME_ZONE = 'Asia/Singapore';
 
@@ -79,8 +80,8 @@ export function buildWeatherReply(
 	return reply;
 }
 
-export function buildAlreadySubscribedMessage(rotaNumber: '1' | '2' | '3' | 'OFFICE_HOURS', nextUpdate: Date) {
-	const schedule = rotaNumber === 'OFFICE_HOURS' ? 'Office Hours' : `Rota ${rotaNumber}`;
+export function buildAlreadySubscribedMessage(rotaNumber: Rota, nextUpdate: Date) {
+	const schedule = rotaNumber === 0 ? 'Office Hours' : `Rota ${rotaNumber}`;
 
 	return `👋🏻 You're already subscribed to the CDA ARMS Weather Bot!
 
@@ -104,8 +105,8 @@ Reports are sent every weekday at 09:50, 11:50, 13:50, and 15:50 SGT.
 
 Use /settings to change your schedule or unsubscribe at any time.`;
 
-export function buildSettingsMessages(rotaNumber: '1' | '2' | '3' | 'OFFICE_HOURS') {
-	const schedule = rotaNumber === 'OFFICE_HOURS' ? 'Office Hours' : `Rota ${rotaNumber}`;
+export function buildSettingsMessages(rotaNumber: Rota) {
+	const schedule = rotaNumber === 0 ? 'Office Hours' : `Rota ${rotaNumber}`;
 
 	return `⚙️ <b>Settings</b>
 
@@ -116,8 +117,8 @@ To change your schedule, select a different option below. To stop updates, press
 
 export const SETROTA_ERROR_MESSAGE = 'An error occurred while setting your rota. Please try again later.';
 
-export function buildRotaSetSuccessMessage(rota: '1' | '2' | '3' | 'OFFICE_HOURS', nextJobRun: Date) {
-	if (rota === 'OFFICE_HOURS') {
+export function buildRotaSetSuccessMessage(rota: Rota, nextJobRun: Date) {
+	if (rota === 0) {
 		return `✅ You're subscribed to Office Hours. You will receive weather updates every weekday. To change your schedule or stop updates, use the /settings command.
 
 Next update: ${escapeHtml(formatSingaporeDate(nextJobRun))}

@@ -9,7 +9,10 @@ export function createDb(database: D1Database) {
 
 export type Db = ReturnType<typeof createDb>;
 
-export async function upsertRota({ chatId, rota, db }: { chatId: number; rota: '1' | '2' | '3' | 'OFFICE_HOURS'; db: Db }) {
+export type OfficeHour = 0
+export type Rota = 1 | 2 | 3 | OfficeHour
+
+export async function upsertRota({ chatId, rota, db }: { chatId: number; rota: Rota; db: Db }) {
 	return db
 		.insert(rotaTable)
 		.values({
@@ -30,12 +33,14 @@ export async function removeSubscription({ chatId, db }: { chatId: number; db: D
 
 export async function getChatIDsForToday({ db }: { db: Db }) {
 	const todayRotaNumber = getRotaNumberForDate(new Date());
+
+	// Get people for today's rota and office hours
 	const data = await db
 		.select({
 			telegramChatId: rotaTable.telegramChatId,
 		})
 		.from(rotaTable)
-		.where(and(eq(rotaTable.rota, todayRotaNumber.toString() as '1' | '2' | '3' | 'OFFICE_HOURS'), eq(rotaTable.rota, 'OFFICE_HOURS')));
+		.where(and(eq(rotaTable.rota, todayRotaNumber), eq(rotaTable.rota, 0)));
 
 	return data.map((row) => row.telegramChatId);
 }
@@ -53,5 +58,5 @@ export async function getRotaForChatId({ chatId, db }: { chatId: number; db: Db 
 		return null;
 	}
 
-	return data[0].rota;
+	return data[0].rota as Rota;
 }
