@@ -1,0 +1,12 @@
+{
+  "name": "cda_weather_arms_telegram_bot_serverless",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "cf-typegen": "pnpm recursive run cf-typegen"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
