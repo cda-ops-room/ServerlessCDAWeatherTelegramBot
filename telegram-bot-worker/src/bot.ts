@@ -17,7 +17,7 @@ import { WeatherCatResponse, WeatherServiceResponse } from './index';
 import { format } from 'date-fns/format';
 import { tz } from '@date-fns/tz';
 
-function formatDate(date: Date | string): string {
+export function formatDate(date: Date | string): string {
 	return format(new Date(date), 'd MMMM yyyy HH:mm', {
 		in: tz('Asia/Singapore'),
 	});
@@ -290,6 +290,17 @@ Info last updated: ${formatDate(new Date(cda.update_on)) ?? 'N/A'}
 		// 	parse_mode: 'HTML',
 		// });
 	});
+
+	bot.command("about", async (ctx: Context) => {
+
+		const {tag, id, timestamp} = env.CF_VERSION_METADATA
+		await ctx.reply(`🤖 <b>CDA ARMS Weather Bot</b>
+Tag: ${tag}
+ID: ${id}
+Timestamp: ${formatDate(new Date(timestamp).toISOString())}
+`
+)
+	})
 
 	// Help
 	bot.command('help', async (ctx: Context) => {

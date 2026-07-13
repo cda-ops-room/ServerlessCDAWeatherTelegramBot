@@ -68,6 +68,7 @@ export default {
 		const db = drizzle(env.TELEGRAM_BOT_STATE);
 
 		if (request.method === 'GET') {
+			const {tag, id,timestamp} = env.CF_VERSION_METADATA
 			const todayRotaNumber = getRotaNumberForDate(new Date());
 
 				const res = await db
@@ -84,9 +85,18 @@ export default {
 				error: false,
 				status: 200,
 				message: "Bot health ok",
-				receiverChatIds: res,
-				receiverCount: res.length,
+				rota: {
+
+				chatIds: res,
+				count: res.length,
 				rota: todayRotaNumber,
+				},
+				deploymentInfo: {
+
+				tag,
+				id,
+				timestamp,
+				},
 				date: new Date(),
 			});
 		}
