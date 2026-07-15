@@ -4,11 +4,9 @@ import { WorkerMessageSender } from './messageSender';
 import { buildWeatherReply } from './bot/replies';
 import { registerBotActionHandlers, registerHandlers } from './bot';
 import { Bot, webhookCallback } from 'grammy';
-import {getNextUpdateDateForRota} from "./getNextUpdateDateForRota";
-import {rule} from "./bot/rule";
-import {rotaTable} from "./db/schema";
-import {and, count, eq, or} from "drizzle-orm";
-import getRotaNumberForDate from "./getRotaNumberForDate";
+import { rotaTable } from './db/schema';
+import { count, eq, or } from 'drizzle-orm';
+import getRotaNumberForDate from './getRotaNumberForDate';
 
 type WeatherServiceSnapshot = {
 	heatStress: string;
@@ -45,6 +43,21 @@ export interface WeatherCatLocation {
 	catText: `CAT ${1 | 2 | 3}`;
 }
 
+function logInfo(event: string, fields: Record<string, unknown> = {}) {
+	console.log(JSON.stringify({ level: 'info', event, ...fields }));
+}
+
+function logError(event: string, error: unknown, fields: Record<string, unknown> = {}) {
+	console.error(
+		JSON.stringify({
+			level: 'error',
+			event,
+			error: error instanceof Error ? error.message : String(error),
+			...fields,
+		}),
+	);
+}
+
 /**
  * Cloudflare Worker with scheduled cron for weather updates
  * Structure:
@@ -55,47 +68,47 @@ export interface WeatherCatLocation {
 
 export default {
 	async fetch(request, env): Promise<Response> {
-
-		if(request.method !== 'POST' && request.method !== 'GET'){
-			return Response.json({
-				error: true,
-				status: 405,
-				message: "Method not allowed",
-				date: new Date(),
-			});
+		// Because the bot only handles GET (for the home route) or POST (for the telegram bot)
+		// Reject other methods
+		if (request.method !== 'POST' && request.method !== 'GET') {
+			return Response.json(
+				{
+					error: true,
+					status: 405,
+					message: 'Method not allowed',
+					date: new Date(),
+				},
+				{
+					status: 405,
+				},
+			);
 		}
 
+		// Create a new DB instance
 		const db = drizzle(env.TELEGRAM_BOT_STATE);
 
 		if (request.method === 'GET') {
-			const {tag, id,timestamp} = env.CF_VERSION_METADATA
+			const { tag, id, timestamp } = env.CF_VERSION_METADATA;
 			const todayRotaNumber = getRotaNumberForDate(new Date());
 
-				const res = await db
-					.select({
-						chatId: rotaTable.telegramChatId
-					})
-					.from(rotaTable)
-					.where(or(eq(rotaTable.rota, todayRotaNumber), eq(rotaTable.rota, 0)))
-					.then((rows) => {
-						return rows.map((row) => row.chatId)
-					})
+			// Get the count for the recipients for today
+			const res = await db
+				.select({
+					count: count(),
+				})
+				.from(rotaTable)
+				.where(or(eq(rotaTable.rota, todayRotaNumber), eq(rotaTable.rota, 0)));
 
 			return Response.json({
 				error: false,
 				status: 200,
-				message: "Bot health ok",
-				rota: {
-
-				chatIds: res,
-				count: res.length,
+				message: 'Bot health ok',
+				count: res[0].count,
 				rota: todayRotaNumber,
-				},
 				deploymentInfo: {
-
-				tag,
-				id,
-				timestamp,
+					tag,
+					id,
+					deploymentDate: timestamp,
 				},
 				date: new Date(),
 			});
@@ -104,13 +117,16 @@ export default {
 		const bot = new Bot(env.BOT_TOKEN, { botInfo: JSON.parse(env.BOT_INFO) });
 
 		registerBotActionHandlers(bot, db);
-		registerHandlers(bot, db);
+		registerHandlers(bot, db, env);
 
 		return webhookCallback(bot, 'cloudflare-mod')(request);
 	},
 
 	async scheduled(controller: ScheduledController, env: Env) {
-		console.log("Scheduled controller");
+		logInfo('scheduled_job_received', {
+			cron: controller.cron,
+			scheduledTime: new Date(controller.scheduledTime).toISOString(),
+		});
 		const db = drizzle(env.TELEGRAM_BOT_STATE);
 		const jobDate = new Date();
 
@@ -118,14 +134,14 @@ export default {
 			// 1. Get all subscribed chat IDs for today
 			const subscribedChatIds = await getChatIDsForToday({ db });
 
-			console.log(`subscribed chatId: ${subscribedChatIds.length}`);
-
 			if (subscribedChatIds.length === 0) {
-				console.info('No subscribed chat IDs found.');
+				logInfo('scheduled_job_no_recipients');
 				return;
 			}
 
-			console.info(`Scheduled job triggered. Sending to ${subscribedChatIds.length} chats.`);
+			logInfo('scheduled_job_started', {
+				recipientCount: subscribedChatIds.length,
+			});
 
 			// 2. Create bot instance
 			const bot = new Bot(env.BOT_TOKEN, { botInfo: JSON.parse(env.BOT_INFO) });
@@ -140,16 +156,19 @@ export default {
 			// 4. Build message ONCE (not per-chat)
 			const message = buildWeatherReply(readings.cda, readings.httc, {
 				jobDate,
-				isCached: new Date() < new Date(readings.cache_expiration)
+				isCached: new Date() < new Date(readings.cache_expiration),
 			});
 
 			// 5. Use WorkerMessageSender to send with rate limiting
 			const sender = new WorkerMessageSender(bot);
 			await sender.sendToMultiple(subscribedChatIds, message);
 
-			console.info(`Weather reports sent to ${subscribedChatIds.length} chats at ${jobDate.toISOString()}`);
+			logInfo('scheduled_job_completed', {
+				recipientCount: subscribedChatIds.length,
+				jobDate: jobDate.toISOString(),
+			});
 		} catch (error) {
-			console.error('Scheduled job failed:', error);
+			logError('scheduled_job_failed', error);
 		}
 	},
 } satisfies ExportedHandler<Env>;
