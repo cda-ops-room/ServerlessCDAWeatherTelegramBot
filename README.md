@@ -130,3 +130,35 @@ pnpm run deploy
 ```
 
 Deploy the weather services before the Telegram worker so the service bindings are available.
+
+## Telegram Webhook
+
+After deploying `telegram-bot-worker`, tell Telegram where to send updates.
+
+The default production webhook URL is:
+
+```bash
+https://telegram-bot-worker.nabridhwan.workers.dev/
+```
+
+Set the webhook with:
+
+```bash
+https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://telegram-bot-worker.nabridhwan.workers.dev/
+```
+
+Replace `<BOT_TOKEN>` with the production Telegram bot token. Do not commit the token to the repository.
+
+To check the bot identity before setting the webhook:
+
+```bash
+https://api.telegram.org/bot<BOT_TOKEN>/getMe
+```
+
+For local development, put local-only secrets in `telegram-bot-worker/.dev.vars`:
+
+```bash
+BOT_TOKEN=
+```
+
+If you delete the webhook to test with `getUpdates`, set it back to the production URL after deploying.
