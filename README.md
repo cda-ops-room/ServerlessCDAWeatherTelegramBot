@@ -164,13 +164,13 @@ After deploying `telegram-bot-worker`, tell Telegram where to send updates.
 The default production webhook URL is:
 
 ```bash
-https://telegram-bot-worker.nabridhwan.workers.dev/
+https://telegram-bot-worker-production.opsroomcda.workers.dev/
 ```
 
 Set the webhook with:
 
 ```bash
-https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://telegram-bot-worker.nabridhwan.workers.dev/
+https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://telegram-bot-worker-production.opsroomcda.workers.dev/
 ```
 
 Replace `<BOT_TOKEN>` with the production Telegram bot token. Do not commit the token to the repository.
@@ -188,3 +188,63 @@ BOT_TOKEN=
 ```
 
 If you delete the webhook to test with `getUpdates`, set it back to the production URL after deploying.
+
+## Handover
+
+Use this checklist when moving production to a new Cloudflare account while keeping the same Telegram bot.
+
+1. Create a Cloudflare account for the new owner or operations team.
+2. From the Cloudflare dashboard, create the D1 database and Workers KV namespace using the names and bindings found in each service's `wrangler.jsonc` file.
+3. Update the new D1 `database_id` in `telegram-bot-worker/wrangler.jsonc`.
+4. Update the new KV namespace `id` in `weather-wbgt-service/wrangler.jsonc` and `weather-cat-service/wrangler.jsonc`.
+5. Fill in each `.env.example` file and rename or copy it to `.env`.
+6. Use Drizzle Kit with Cloudflare D1 HTTP integration to push the database schema before migrating production data. Follow the Drizzle guide: https://orm.drizzle.team/docs/guides/d1-http-with-drizzle-kit.
+
+### D1 Data Migration
+
+Run the export from the old Cloudflare account:
+
+```bash
+cd telegram-bot-worker
+pnpm wrangler d1 export telegram-bot-state --remote --output ../telegram-bot-state-export.sql
+```
+
+Log in to the new Cloudflare account:
+
+```bash
+pnpm wrangler login
+```
+
+After the new D1 database exists, import the exported SQL into the new account:
+
+```bash
+cd telegram-bot-worker
+pnpm wrangler d1 execute telegram-bot-state --remote --file ../telegram-bot-state-export.sql
+```
+
+Use a short maintenance window for the export/import so subscription changes do not land in the old database after the export. After cutover, disable the old Cloudflare Worker cron or deployment so the old Worker cannot send scheduled Telegram messages.
+
+### Handover Deployment
+
+Attempt to deploy all three services with Wrangler. Wrangler may prompt that required secrets are missing; follow the terminal output to set them.
+
+```bash
+cd weather-cat-service
+pnpm run deploy
+
+cd ../weather-wbgt-service
+pnpm run deploy
+
+cd ../telegram-bot-worker
+pnpm run deploy
+```
+
+After setting the required secrets, deploy all three services again in the same order.
+
+Set the Telegram webhook to the production Worker URL:
+
+```bash
+https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://telegram-bot-worker-production.opsroomcda.workers.dev/
+```
+
+Test the Telegram bot by running `/about`. The reply should show the latest deployment ID.
