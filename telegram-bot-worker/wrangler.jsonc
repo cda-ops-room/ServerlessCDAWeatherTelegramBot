@@ -74,7 +74,7 @@
 		}
 	],
 	"triggers": {
-		"crons": ["50 1,3,5,7 * * 1-5"]
+		"crons": ["50 1,3,5,7 * * MON-FRI"]
 	},
 	"vars": {
 		"BOT_INFO": "{\"id\":8876073414,\"is_bot\":true,\"first_name\":\"CDA ARMS Telegram Bot DEV\",\"username\":\"dev_cda_arms_telegram_bot\",\"can_join_groups\":true,\"can_read_all_group_messages\":false,\"supports_inline_queries\":false,\"supports_guest_queries\":false,\"can_connect_to_business\":false,\"has_main_web_app\":false,\"has_topics_enabled\":false,\"allows_users_to_create_topics\":false,\"can_manage_bots\":false,\"supports_join_request_queries\":false}"
